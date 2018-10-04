@@ -1,0 +1,183 @@
+Kalisto
+version 0.9.11
+
+
+Copyright (c) 2001-2016
+  Department of Distributed and Dependable Systems
+  Faculty of Mathematics and Physics
+  Charles University, Czech Republic
+
+
+INTRODUCTION
+
+  This is an educational operating system (a simple kernel and even more
+rudimentary user space) called Kalisto. It is designed to be a jumping board
+in the students' operating system development experience.
+
+  Implemented features:
+    - kernel and user space threads
+    - rudimentary user space process management
+    - kernel timers
+    - kernel mutexes and semaphores
+    - simple kernel frame allocator
+    - simple kernel heap allocator (malloc, free)
+    - simple console and keyboard drivers
+    - round-robin scheduler
+    - generic bitmap data structure
+    - generic circular linked list data structure
+    - generic red-black tree data structure
+    - atomic operations
+    - system-specific functions
+    - basic system call handling
+    - debugging functions
+    - very rudimentary SMP support
+
+  Several of the features are provided only in the form of binary modules
+(without the source code). These features are important building blocks for
+other features, thus their implementation cannot be left out, but several
+semestral tasks still require the students to implement these features
+independently.
+
+
+USAGE
+
+  To build the operating system, run "make" in the top-level directory.
+The cross-compiler toolchain for MIPS is expected to be located in the
+/usr/local/cross/mips32 directory (this directory can be changed using
+the CROSS_PREFIX environment variable). Please use the script
+contrib/toolchain.mips.sh to build and install the cross-compiler toolchain.
+
+  To boot the operating system after a successful compilation, run "msim"
+in the top-level directory. The provided configuration file msim.conf is
+compatible with MSIM 1.3.x.
+
+  There are also several unit/regression tests available. To run the basic
+set of tests, run the "tests.sh" script from the top-level directory.
+
+
+SOURCE FILES
+
+	kernel/main.{h,c}
+		kernel main module -- basic initialization
+	kernel/head.S
+		system-specific routines, exception entry points,
+		interrupt control routines
+	kernel/example.{h,c}
+		sample kernel threads to show that the kernel works
+	kernel/api.h
+		include file for kernel tests
+	kernel/kernel.lds
+		kernel linker script
+	
+	kernel/adt/atomic.h
+		several atomic operations
+	kernel/adt/bitmap.{h,obj}
+		bitmap implementation
+	kernel/adt/list.h
+		circular linked list implementation
+	kernel/adt/rbtree.{h,c}
+		red-black tree implementation
+	
+	kernel/boot/loader.S
+		system startup, redirects the execution flow
+		to a specified kernel address
+	
+	kernel/drivers/kbd.{h,obj}
+		dkeyboard device routines
+	kernel/drivers/printer.h
+		dprinter device routines
+	kernel/drivers/dorder.{h,c}
+		dorder device routines
+	kernel/drivers/timer.h
+		MIPS timer routines
+	
+	kernel/exc/exc.{h,c}
+		exception handler
+	kernel/exc/int.{h,c}
+		interrupt handler
+	kernel/exc/syscall.{h,obj}
+		syscall handler
+	
+	kernel/include/asm.h
+		constants and macros for assembler files
+	kernel/include/c.h
+		constants and macros for C files
+	kernel/include/shared.h
+		constants and macros for both assembler
+		and C files
+	kernel/include/gen_offset.{c,sh}
+		utility for generating offset constants
+		from a C structure
+	
+	kernel/lib/debug.h
+		debugging helper macros
+	kernel/lib/print.{h,c}
+		common string output routines
+	kernel/lib/stdarg.h
+		variadic functions helpers
+	kernel/lib/string.{h,c}
+		common binary string manipulation routines
+	
+	kernel/mm/falloc.{h,obj}
+		physical frame allocator routines
+	kernel/mm/malloc.{h,c}
+		kernel heap allocator routines
+	kernel/mm/tlb.{h,c}
+		TLB handling routines
+	
+	kernel/proc/process.{h,c}
+		user space thread and process management
+	kernel/proc/thread.{h,c}
+		kernel thread management
+	
+	kernel/sched/sched.{h,c}
+		thread scheduler
+	
+	kernel/synch/mutex.{h,obj}
+		kernel mutexes implementation
+	kernel/synch/sem.{h,obj}
+		kernel semaphores implementation
+	
+	kernel/tests/include/defs.h
+		common constants and macros for the kernel
+		tests infrastructure
+	kernel/tests/include/tst_list.h
+		linked list implementation for the kernel
+		tests infrastructure
+	kernel/tests/include/tst_rand.h
+		random number generator for the kernel tests
+		infrastructure
+	
+	kernel/tests/basic/panic1/test.c
+		kernel panic functionality test
+	kernel/tests/basic/atomic1/test.c
+		atomic operations test
+	kernel/tests/basic/malloc1/test.c
+		kernel heap allocator test
+	kernel/tests/basic/thread1/test.c
+		kernel thread management test
+	kernel/tests/basic/timer1/test.c
+		kernel timers test
+	
+	kernel/time.h
+		wall-clock time helper routines
+	kernel/timer.{h,c}
+		kernel timers
+
+
+CREDITS
+
+	Viliam Holub <holub@d3s.mff.cuni.cz>
+		original design
+	Petr Tuma <tuma@d3s.mff.cuni.cz>
+		features, memory allocator, code revision
+	Martin Decky <decky@d3s.mff.cuni.cz>
+		features, SMP support, code cleanup and revision
+	Lubomir Bulej <bulej@d3s.mff.cuni.cz>
+		threads, timers, tests
+	Tomas Bures <bures@d3s.mff.cuni.cz>
+		notes, comments, code revision
+
+  We would like to thank all the students who have helped to improve Kalisto
+over the years, either by reporting bugs or sending suggestions for
+improvements.
