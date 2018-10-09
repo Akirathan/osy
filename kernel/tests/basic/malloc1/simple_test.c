@@ -6,7 +6,6 @@ static size_t total_mem = 0;
 static void error_handler (void)
 {
     printk("Memory allocation failed, total memory allocated = %d\n", total_mem);
-    exit(1);
 }
 
 void test_run (void)
