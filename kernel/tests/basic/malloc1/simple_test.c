@@ -10,9 +10,9 @@ static void error_handler (void)
 
 void test_run (void)
 {
-    const size_t chunk_size = 8;
+    const size_t chunk_size = 1024;
 
-    for (size_t i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1024; i++) {
         void *ptr = malloc(chunk_size);
 
         if (ptr == NULL) {
