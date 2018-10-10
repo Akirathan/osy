@@ -12,7 +12,7 @@ void test_run (void)
 {
     const size_t chunk_size = 8;
 
-    for (size_t i = 0; i < 10; i++) {
+    for (size_t i = 0; i < 10000; i++) {
         void *ptr = malloc(chunk_size);
 
         if (ptr == NULL) {
