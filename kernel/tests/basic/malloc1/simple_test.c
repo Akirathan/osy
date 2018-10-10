@@ -17,8 +17,11 @@ void test_run (void)
 
         if (ptr == NULL) {
             error_handler();
+            return;
         }
 
         total_mem += chunk_size;
     }
+
+    printk("Memory allocation succeeded, total memory allocated = %d\n", total_mem);
 }
