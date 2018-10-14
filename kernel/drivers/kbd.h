@@ -23,7 +23,7 @@
 
 
 /** Base address of the keyboard hardware */
-#define KBD_ADDRESS  (ADDR_IN_KSEG0 (0x10000000))
+#define KBD_ADDRESS  (ADDR_IN_KSEG0 (0x10000008))
 
 
 /** Read a character

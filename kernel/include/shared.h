@@ -98,14 +98,14 @@
  * Address of the dorder device.
  */
 
-#define DEVICE_DORDER_ADDR  0x10000004
+#define DEVICE_DORDER_ADDR  0x10000010
 #define DEVICE_DORDER_INTR  6
 
 /*
  * Address of the ddisk device.
  */
 
-#define DEVICE_DDISK_ADDR  0x1000000C
+#define DEVICE_DDISK_ADDR  0x10000018
 #define DEVICE_DDISK_INTR  5
 
 

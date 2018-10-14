@@ -198,7 +198,7 @@ static inline void list_prepend (list_t *list, link_t *link)
 
 /** Append item to the list
  *
- * Append a new item to the endof a list.
+ * Append a new item to the end of a list.
  *
  * @param list The list to append to.
  * @param link The new item link.
@@ -223,7 +223,7 @@ static inline void list_append (list_t *list, link_t *link)
  * @param link The item link to remove.
  *
  */
-static inline void list_remove(link_t *link)
+static inline void list_remove (link_t *link)
 {
 	assert (link != NULL);
 	

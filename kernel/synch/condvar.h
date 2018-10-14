@@ -46,7 +46,7 @@ extern void condvar_init (struct condvar *cvar);
 extern void condvar_destroy (struct condvar *cvar);
 extern void condvar_signal (struct condvar *cvar);
 extern void condvar_broadcast (struct condvar *cvar);
-extern void condvar_wait(struct condvar *cvar, struct mutex *mtx);
+extern void condvar_wait (struct condvar *cvar, struct mutex *mtx);
 
 
 #endif /* CONDVAR_H_ */

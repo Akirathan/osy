@@ -1,7 +1,7 @@
 #
 # Kalisto
 #
-# Copyright (c) 2001-2010
+# Copyright (c) 2001-2018
 #   Department of Distributed and Dependable Systems
 #   Faculty of Mathematics and Physics
 #   Charles University, Czech Republic
@@ -13,7 +13,7 @@
 # can be used to cleanup the source tree.
 #
 
-KALISTO_VERSION = 0.9.11
+KALISTO_VERSION = 0.9.12
 DISTNAME = kalisto-$(KALISTO_VERSION)
 
 ### Phony targets
@@ -45,10 +45,10 @@ distclean:
 
 dist:
 	mkdir $(DISTNAME)
-	cp Makefile README msim.conf ddisk.img $(DISTNAME)
+	cp Makefile README msim.conf $(EXTRA_DIST_FILES) ddisk.img $(DISTNAME)
 	cp tests*.sh $(DISTNAME)
-	cp -R contrib doc kernel user $(DISTNAME)
+	cp -RL contrib doc kernel user $(DISTNAME)
 	make -C $(DISTNAME) distclean >/dev/null 2>/dev/null
 	tar cjf $(DISTNAME).tar.bz2 $(DISTNAME)
 	rm -rf $(DISTNAME)
-	
+
