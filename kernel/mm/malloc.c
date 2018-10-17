@@ -334,22 +334,6 @@ void *malloc (const size_t size)
 
 	/* We managed to find some "best fit" block. */
 	if (smallest_diff_head != NULL) {
-		/*
-		* See if we have to split the "best fit" block.
-		*/
-		size_t split_limit = real_size +
-			sizeof (heap_block_head_t) + sizeof (heap_block_foot_t);
-		
-		if (smallest_diff_head->size > split_limit) {
-			/* Block big enough -> split. */
-			void *next = ((void *) smallest_diff_head) + real_size;
-			block_init (next, smallest_diff_head->size - real_size, true, smallest_diff_heap);
-			block_init (smallest_diff_head, real_size, false, smallest_diff_heap);
-		} else {
-			/* Block too small -> use as is. */
-			smallest_diff_head->free = false;
-		}
-
 		result = ((void *) smallest_diff_head) + sizeof(heap_block_head_t);
 	}
 	
