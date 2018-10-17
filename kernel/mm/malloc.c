@@ -304,7 +304,6 @@ void *malloc (const size_t size)
 	
 	void *result = NULL;
 	heap_block_head_t *smallest_diff_head = NULL;
-	heap_t *smallest_diff_heap = NULL;
 	
 	/* Iterate over all heaps */
 	list_foreach (heap_list, heap_t, link, heap) {
@@ -323,7 +322,6 @@ void *malloc (const size_t size)
 				if (curr_diff < smallest_diff) {
 					smallest_diff = curr_diff;
 					smallest_diff_head = pos;
-					smallest_diff_heap = heap;
 				}
 			}
 			
