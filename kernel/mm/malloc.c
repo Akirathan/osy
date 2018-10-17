@@ -308,7 +308,7 @@ void *malloc (const size_t size)
 	/* Iterate over all heaps */
 	list_foreach (heap_list, heap_t, link, heap) {
 		heap_block_head_t *pos = (heap_block_head_t *) heap->heap_start;
-		size_t smallest_diff = 0;
+		size_t smallest_diff = pos->size;
 		
 		while ((void *) pos < heap->heap_end) {
 			/* Make sure the heap is not corrupted. */
