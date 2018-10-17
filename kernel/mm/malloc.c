@@ -303,44 +303,54 @@ void *malloc (const size_t size)
 	    sizeof (heap_block_head_t) + sizeof (heap_block_foot_t);
 	
 	void *result = NULL;
+	heap_block_head_t *smallest_diff_head = NULL;
+	heap_t *smallest_diff_heap = NULL;
 	
 	/* Iterate over all heaps */
 	list_foreach (heap_list, heap_t, link, heap) {
 		heap_block_head_t *pos = (heap_block_head_t *) heap->heap_start;
+		size_t smallest_diff = 0;
 		
-		while ((result == NULL) && ((void *) pos < heap->heap_end)) {
+		while ((void *) pos < heap->heap_end) {
 			/* Make sure the heap is not corrupted. */
 			block_check (pos);
 			
 			/* Try to find a block that is free and large enough. */
 			if ((pos->free) && (pos->size >= real_size)) {
-				/*
-				 * We have found a suitable block.
-				 * See if we should split it.
-				 */
-				size_t split_limit = real_size +
-				    sizeof (heap_block_head_t) + sizeof (heap_block_foot_t);
-				
-				if (pos->size > split_limit) {
-					/* Block big enough -> split. */
-					void *next = ((void *) pos) + real_size;
-					block_init (next, pos->size - real_size, true, heap);
-					block_init (pos, real_size, false, heap);
-				} else {
-					/* Block too small -> use as is. */
-					pos->free = false;
+
+				size_t curr_diff = pos->size - real_size;
+				/* Check if the block fits best. */
+				if (curr_diff < smallest_diff) {
+					smallest_diff = curr_diff;
+					smallest_diff_head = pos;
+					smallest_diff_heap = heap;
 				}
-				
-				/* Either way we have our result. */
-				result = ((void *) pos) + sizeof (heap_block_head_t);
 			}
 			
 			/* Advance to the next block. */
 			pos = (heap_block_head_t *) (((void *) pos) + pos->size);
 		}
+	}
+
+	/* We managed to find some "best fit" block. */
+	if (smallest_diff_head != NULL) {
+		/*
+		* See if we have to split the "best fit" block.
+		*/
+		size_t split_limit = real_size +
+			sizeof (heap_block_head_t) + sizeof (heap_block_foot_t);
 		
-		if (result != NULL)
-			break;
+		if (smallest_diff_head->size > split_limit) {
+			/* Block big enough -> split. */
+			void *next = ((void *) smallest_diff_head) + real_size;
+			block_init (next, smallest_diff_head->size - real_size, true, smallest_diff_heap);
+			block_init (smallest_diff_head, real_size, false, smallest_diff_heap);
+		} else {
+			/* Block too small -> use as is. */
+			smallest_diff_head->free = false;
+		}
+
+		result = ((void *) smallest_diff_head) + sizeof(heap_block_head_t);
 	}
 	
 	/*
