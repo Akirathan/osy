@@ -304,11 +304,11 @@ void *malloc (const size_t size)
 	
 	void *result = NULL;
 	heap_block_head_t *smallest_diff_head = NULL;
+	size_t smallest_diff = HEAP_BLOCK_SIZE_MAX;
 	
 	/* Iterate over all heaps */
 	list_foreach (heap_list, heap_t, link, heap) {
 		heap_block_head_t *pos = (heap_block_head_t *) heap->heap_start;
-		size_t smallest_diff = HEAP_BLOCK_SIZE_MAX;
 		
 		while ((void *) pos < heap->heap_end) {
 			/* Make sure the heap is not corrupted. */
