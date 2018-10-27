@@ -48,7 +48,7 @@ OBJDUMP = $(TOOLCHAIN_DIR)/bin/$(TARGET)-objdump
 # -nostdinc                   ... do not look for standard header files in system directories
 #
 
-CCFLAGS = -O2 -march=r4000 -mabi=32 -mgp32 -msoft-float -mlong32 -G 0 -mno-abicalls -fno-pic -fno-builtin -ffreestanding -nostdlib -nostdinc -pipe -Wall -Wextra -Werror -Wno-unused-parameter -Wmissing-prototypes -g3 -std=gnu99 -I. -DKALISTO_VERSION=$(KALISTO_VERSION) -DBUILT_BY=$$USER
+CCFLAGS = -march=r4000 -mabi=32 -mgp32 -msoft-float -mlong32 -G 0 -mno-abicalls -fno-pic -fno-builtin -ffreestanding -nostdlib -nostdinc -pipe -Wall -Wextra -Werror -Wno-unused-parameter -Wmissing-prototypes -g3 -std=gnu99 -I. -DKALISTO_VERSION=$(KALISTO_VERSION) -DBUILT_BY=$$USER
 ASFLAGS = -march=r4000 -mabi=32 -mgp32 -msoft-float -mlong32 -G 0 -mno-abicalls -fno-pic -fno-builtin -ffreestanding -nostdlib -nostdinc -pipe -Wall -Wextra -Werror -Wno-unused-parameter -Wmissing-prototypes -g3 -std=gnu99 -I. -D__ASM__
 LDFLAGS = -G 0 -static -g
 
