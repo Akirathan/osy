@@ -1,34 +1,22 @@
 #include <api.h>
+#include <adt/bitmap.h>
 #include "../../include/defs.h"
 
-void scan_memory_test(void);
+void my_frame_init(void);
+int my_frame_alloc (uintptr_t *phys, const size_t cnt, const vm_flags_t flags);
 
-void scan_memory_test(void)
+static bitmap_t bitmap;
+static uint32_t usable_memory = 0;
+/* Total number of usable frames. */
+static size_t total_frames = 0;
+
+#define MAX_MEMORY_MB 512U
+
+static void test_allocation(void)
 {
-    // Try to trigger exception
-    size_t boundary = 1024 * 1024; // 1 MB
-    size_t address = KSEG1_BASE + 40 * boundary;
-    uint8_t *ptr_to_high_addr = (uint8_t *) address;
-    //uint8_t *ptr_to_correct_addr = (uint8_t *) (_kernel_end + 300);
-
-    printk("Address = %u\n", address);
-
-    *ptr_to_high_addr = 23; // This does not trigger an exception
-    if (*ptr_to_high_addr == 23) {
-        printk("Successfully written to %u\n", address);
-    }
-    else {
-        printk("Not written to %u\n", address);
-    }
-
-    uint8_t *ptr_to_correct_addr = (uint8_t *) (KSEG1_BASE + boundary + 30);
-    *ptr_to_correct_addr = 23;
-    if (*ptr_to_correct_addr == 23) {
-        printk("Successfully written to %u\n", (KSEG1_BASE + boundary + 30));
-    }
-    else {
-        printk("Not written to %u\n", (KSEG1_BASE + boundary + 30));
-    }
+    uintptr_t addr = 0;
+    int err = my_frame_alloc(&addr, 2, VF_VA_AUTO);
+    assert (err == EOK);
 }
 
 /** Tests whether given address is usable
@@ -68,11 +56,68 @@ static size_t scan_memory(void)
         increments++;
     }
 
+    assert(increments > 0);
     return (size_t) increments;
+}
+
+/** Counts how many frames will bitmap need
+ * 
+ * @return Number of frames needed for bitmap.
+ */
+static size_t count_bitmap_storage(const size_t frame_num)
+{
+    /* How many frames can be held in a bitmap that is allocated in one frame. */
+    const size_t one_frame_bitmap = FRAME_SIZE * BITMAP_ELEMENT_BITS;
+
+    /* How many frames to allocate for the bitmap. */
+    size_t frames_for_bitmap = (frame_num / one_frame_bitmap) + 1;
+    assert(frames_for_bitmap >= 1 && frames_for_bitmap <= 4);
+
+    return frames_for_bitmap;
+}
+
+static uint32_t frame_to_addr(const size_t frame_num)
+{
+    // TODO: return from usable_memory
+    return ADDR_IN_KSEG1(frame_num * FRAME_SIZE);
+}
+
+void my_frame_init(void)
+{
+    usable_memory = ADDR_IN_KSEG1((uint32_t)&_kernel_end);
+    total_frames = scan_memory();
+    size_t frames_for_bitmap = count_bitmap_storage(total_frames);
+
+    bitmap_init(&bitmap, total_frames - frames_for_bitmap, &usable_memory);
+    usable_memory += frames_for_bitmap;
+}
+
+/**
+ * @param cnt Number of frames to allocate.
+ */
+int my_frame_alloc(uintptr_t *phys, const size_t cnt, const vm_flags_t flags)
+{
+    if (flags & VF_VA_AUTO) {
+        size_t index = 0;
+        bool err = bitmap_allocate_range(&bitmap, cnt, 0, total_frames, &index);
+        if (err != false) {
+            /* Allocation successfull. */
+            *phys = frame_to_addr(index);
+            return EOK;
+        }
+        else {
+            /* Cannot allocate. */
+            return ENOMEM;
+        }
+    }
+
+    return EINVAL;
 }
 
 void test_run(void)
 {
-    size_t frames = scan_memory();
-    printk("Test passed, number of frames = %u\n", frames);
+    my_frame_init();
+    test_allocation();
+
+    puts("Test passed\n");
 }
