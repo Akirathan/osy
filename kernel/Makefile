@@ -74,6 +74,7 @@ KERNEL_SOURCES = \
 	lib/string.c \
 	mm/tlb.c \
 	mm/falloc.c \
+	mm/my_falloc.c \
 	mm/malloc.c \
 	mm/vmm.c \
 	drivers/disk.c \
