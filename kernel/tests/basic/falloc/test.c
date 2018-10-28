@@ -6,9 +6,10 @@ void my_frame_init(void);
 int my_frame_alloc (uintptr_t *phys, const size_t cnt, const vm_flags_t flags);
 
 static bitmap_t bitmap;
-static uint32_t usable_memory = 0;
+/* Address of memory from which the frames will be allocated. */
+static uintptr_t frames_begin = 0;
 /* Total number of usable frames. */
-static size_t total_frames = 0;
+static size_t usable_frames = 0;
 
 #define MAX_MEMORY_MB 512U
 
@@ -84,12 +85,15 @@ static uint32_t frame_to_addr(const size_t frame_num)
 
 void my_frame_init(void)
 {
-    usable_memory = ADDR_IN_KSEG1((uint32_t)&_kernel_end);
-    total_frames = scan_memory();
-    size_t frames_for_bitmap = count_bitmap_storage(total_frames);
+    uintptr_t kernel_end = ADDR_IN_KSEG1((uint32_t)&_kernel_end);
+    size_t all_frames = scan_memory();
+    size_t frames_for_bitmap = count_bitmap_storage(all_frames);
+    usable_frames = all_frames - frames_for_bitmap;
 
-    bitmap_init(&bitmap, total_frames - frames_for_bitmap, &usable_memory);
-    usable_memory += frames_for_bitmap;
+    bitmap_init(&bitmap, usable_frames, (void *)kernel_end);
+
+    frames_begin = ADDR_IN_KSEG1((uintptr_t)&_kernel_end);
+    frames_begin += frames_for_bitmap * FRAME_SIZE;
 }
 
 /**
@@ -99,7 +103,7 @@ int my_frame_alloc(uintptr_t *phys, const size_t cnt, const vm_flags_t flags)
 {
     if (flags & VF_VA_AUTO) {
         size_t index = 0;
-        bool err = bitmap_allocate_range(&bitmap, cnt, 0, total_frames, &index);
+        bool err = bitmap_allocate_range(&bitmap, cnt, 0, bitmap.elements, &index);
         if (err != false) {
             /* Allocation successfull. */
             *phys = frame_to_addr(index);
