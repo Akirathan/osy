@@ -25,11 +25,29 @@ static void my_test_allocation(void)
     assert(err == EOK);
 }
 
+static void my_test_alloc_and_free(void)
+{
+    uintptr_t first_addr = 0;
+    uintptr_t _first_addr = 0;
+    int err = my_frame_alloc(&first_addr, 2, VF_VA_AUTO);
+    _first_addr = first_addr;
+    assert(err == EOK);
+
+    err = my_frame_free(first_addr, 2);
+    assert(err == EOK);
+
+    err = my_frame_alloc(&first_addr, 2, VF_VA_AUTO);
+    assert(err == EOK);
+    /* Memory was freed - it should be allocated into same address. */
+    assert(first_addr == _first_addr);
+}
+
 void test_run(void)
 {
     my_frame_init();
     my_frame_test();
     my_test_allocation();
+    my_test_alloc_and_free();
 
     puts("Falloc test passed\n");
 }
