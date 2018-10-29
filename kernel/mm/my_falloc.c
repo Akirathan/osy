@@ -14,8 +14,6 @@ static uintptr_t frames_begin_kseg = 0;
 /* Total number of usable frames. */
 static size_t usable_frames = 0;
 
-#define MAX_MEMORY_MB 512U
-
 #define KSEG1_BASE 0xA0000000
 #define VIRT_TO_PHYS(addr)  (((uintptr_t) addr) - (uintptr_t) KSEG1_BASE)
 #define PHYS_TO_VIRT(addr)  (((uintptr_t) addr) + (uintptr_t) KSEG1_BASE)
@@ -162,7 +160,22 @@ int my_frame_alloc(uintptr_t *phys, const size_t cnt, const vm_flags_t flags)
 
 int my_frame_free(const uintptr_t phys, const size_t cnt)
 {
-    return 0;
+    if (cnt == 0 || !is_addr_aligned(phys)) {
+        return EINVAL;
+    }
+
+    size_t frame_index = addr_to_frame(phys);
+
+    bool err = bitmap_check_range(&bitmap, frame_index, cnt);
+    if (err == true) {
+        /* The given memory range was allocated --> free it */
+        bitmap_clear_range(&bitmap, frame_index, cnt);
+        return EOK;
+    }
+    else {
+        /* Given memory range was not allocated */
+        return EINVAL;
+    }
 }
 
 void my_frame_test(void)
@@ -173,5 +186,4 @@ void my_frame_test(void)
         size_t frame_index = addr_to_frame(addr);
         assert(frame_index == i);
     }
-
 }
