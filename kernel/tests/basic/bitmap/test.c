@@ -99,35 +99,37 @@ static void test_check_range(void)
     assert(err == false);
 }
 
+/* Try to put bitmap into BSS segment. */
+static bitmap_t bitmap_glob;
+
 /**
  * Tests the bitmap with storage beginning from _kernel_end
  */
 static void test_in_kseg(void)
 {
-    bitmap_t bitmap;
     uintptr_t kernel_end = ADDR_IN_KSEG1((uint32_t)&_kernel_end);
 
     /* Initialize bitmap with storage in kernel_end (KSEG1). */
     clear((uint8_t *)kernel_end, FRAME_SIZE);
-    bitmap_init(&bitmap, 236, (void *)kernel_end);
+    bitmap_init(&bitmap_glob, 236, (void *)kernel_end);
 
     /* Allocate first range. */
     size_t first_index = 0;
-    bool err = bitmap_allocate_range(&bitmap, 2, 0, bitmap.elements, &first_index);
+    bool err = bitmap_allocate_range(&bitmap_glob, 2, 0, bitmap_glob.elements, &first_index);
     assert(err == true);
     assert(first_index == 0);
-    err = bitmap_check_range(&bitmap, 0, 2);
+    err = bitmap_check_range(&bitmap_glob, 0, 2);
     assert(err == true);
 
     /* Allocate second range. */
     size_t sec_index = 0;
-    err = bitmap_allocate_range(&bitmap, 2, 0, bitmap.elements, &sec_index);
+    err = bitmap_allocate_range(&bitmap_glob, 2, 0, bitmap_glob.elements, &sec_index);
     assert(err == true);
     assert(first_index != sec_index);
     assert(sec_index == 2);
 
     /* Check that both ranges were successfully allocated. */
-    err = bitmap_check_range(&bitmap, 0, 4);
+    err = bitmap_check_range(&bitmap_glob, 0, 4);
     assert(err == true);
 }
 
