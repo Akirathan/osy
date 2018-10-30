@@ -43,7 +43,7 @@ static void clear_buffer(const uintptr_t addr, const size_t bytes_count)
  */
 static bool is_device_addr(const uintptr_t addr)
 {
-
+    return false;
 }
 
 /** Tests whether given address is usable
@@ -200,6 +200,11 @@ void my_frame_init(void)
 
     frames_begin_kseg = ADDR_IN_KSEG1((uintptr_t)&_kernel_end);
     frames_begin_kseg += frames_for_bitmap * FRAME_SIZE;
+
+    /* Print some useful information. */
+    printk("All frames = %u\n", all_frames);
+    printk("Frames used for bitmap = %u\n", frames_for_bitmap);
+    printk("frames_begin_kseg = %u\n", frames_begin_kseg);
 }
 
 /**
@@ -275,4 +280,19 @@ void my_frame_test(void)
         size_t frame_index = addr_to_frame(addr);
         assert(frame_index == i);
     }
+
+    /* TODO: remove this code! */
+    (void) is_device_addr(0);
+
+    /* Test range allocation (testing only bitmap was fine). */
+    size_t first_index = 0;
+    bool err = allocate_range(2, 0, bitmap.elements, &first_index);
+    assert(err == true);
+    assert(first_index == 0);
+
+    size_t second_index = 0;
+    err = allocate_range(2, 0, bitmap.elements, &second_index);
+    assert(second_index == 2);
+
+    printk("my_frame_test ended successfully.\n");
 }
