@@ -27,7 +27,7 @@
  *
  */
 typedef struct {
-	size_t elements;
+	size_t elements;  /* size of bitmap */
 	uint8_t *bits;
 } bitmap_t;
 
