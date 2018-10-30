@@ -57,32 +57,6 @@ static void my_test_alloc_and_free(void)
 }
 
 /**
- * This test leaves fragmented memory intentionally.
- */
-static void my_test_alloc_and_free_fragmented(void)
-{
-    uintptr_t addr = 0;
-    int err = my_frame_alloc(&addr, 10, VF_VA_AUTO);
-    assert(err == EOK);
-
-    uintptr_t fourth_frame_addr = addr + FRAME_SIZE * 3;
-    err = my_frame_free(fourth_frame_addr, 1);
-    assert(err == EOK);
-
-    /* Try to free a block that was already freed. */
-    err = my_frame_free(fourth_frame_addr, 1);
-    assert(err == EINVAL);
-
-    uintptr_t fifth_frame_addr = fourth_frame_addr + FRAME_SIZE;
-    err = my_frame_free(fifth_frame_addr, 1);
-    assert(err == EOK);
-
-    /* Try to allocate 2 consecutive blocks that were just freed. */
-    err = my_frame_alloc(&fourth_frame_addr, 2, VF_VA_USER);
-    assert(err == EOK);
-}
-
-/**
  * Allocate huge chunk of memory and free the whole block by subchunks.
  */
 static void my_test_alloc_and_free_3(void)
@@ -99,6 +73,21 @@ static void my_test_alloc_and_free_3(void)
     }
 }
 
+/**
+ * Allocates small chunks of memory and tests whether they are consecutive.
+ */
+static void my_test_alloc_continuous(void)
+{
+    uintptr_t first_addr = 0;
+    int err = my_frame_alloc(&first_addr, 2, VF_VA_AUTO);
+    assert(err == EOK);
+
+    uintptr_t sec_addr = 0;
+    err = my_frame_alloc(&sec_addr, 2, VF_VA_AUTO);
+    assert(err == EOK);
+    assert(sec_addr == first_addr + (2 * FRAME_SIZE));
+}
+
 void test_run(void)
 {
     my_frame_init();
@@ -106,8 +95,8 @@ void test_run(void)
 
     my_test_allocation();
     my_test_alloc_and_free();
-    my_test_alloc_and_free_fragmented();
     my_test_alloc_and_free_3();
+    my_test_alloc_continuous();
 
     puts("Falloc test passed\n");
 }
