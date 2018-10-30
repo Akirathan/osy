@@ -1,14 +1,18 @@
 #include "my_falloc.h"
 #include <adt/bitmap.h>
 
+static void clear_buffer(const uintptr_t addr, const size_t bytes_count);
 static bool mem_accessible(const uint32_t addr);
 static size_t scan_memory(void);
 static size_t count_bitmap_storage(const size_t frame_num);
 static uintptr_t frame_to_addr(const size_t frame_index);
 static size_t addr_to_frame(const uintptr_t addr);
 static bool is_addr_aligned(const uintptr_t addr);
+static void bitmap_lock(void);
+static void bitmap_unlock(void);
 
 static bitmap_t bitmap;
+static struct mutex bitmap_mtx;
 /* Virtual address of memory (in KSEG1) from which the frames will be allocated. */
 static uintptr_t frames_begin_kseg = 0;
 /* Total number of usable frames. */
@@ -17,6 +21,16 @@ static size_t usable_frames = 0;
 #define KSEG1_BASE 0xA0000000
 #define VIRT_TO_PHYS(addr)  (((uintptr_t) addr) - (uintptr_t) KSEG1_BASE)
 #define PHYS_TO_VIRT(addr)  (((uintptr_t) addr) + (uintptr_t) KSEG1_BASE)
+
+static void clear_buffer(const uintptr_t addr, const size_t bytes_count)
+{
+    uint8_t *buffer = (uint8_t *)addr;
+
+    for (size_t i = 0; i < bytes_count; ++i) {
+        *buffer = 0;
+        buffer++;
+    }
+}
 
 /** Tests whether given address is usable
  * 
@@ -56,6 +70,7 @@ static size_t scan_memory(void)
     }
 
     assert(increments > 0);
+    /* TODO: Check maximum amount of memory is not overrun. */
     return (size_t) increments;
 }
 
@@ -104,6 +119,45 @@ static inline bool is_addr_aligned(const uintptr_t addr)
     return ((base_addr % FRAME_SIZE) == 0);
 }
 
+static void bitmap_lock_init(void)
+{
+    mutex_init(&bitmap_mtx);
+}
+
+static void bitmap_lock(void)
+{
+    mutex_lock(&bitmap_mtx);
+}
+
+static void bitmap_unlock(void)
+{
+    mutex_unlock(&bitmap_mtx);
+}
+
+static bool allocate_range(const size_t count, const size_t base, const size_t constraint,
+                           size_t *index)
+{
+    bitmap_lock();
+    bool err = bitmap_allocate_range(&bitmap, count, base, constraint, index);
+    bitmap_unlock();
+    return err;
+}
+
+static bool check_range(const size_t start, const size_t count)
+{
+    bitmap_lock();
+    bool err = bitmap_check_range(&bitmap, start, count);
+    bitmap_unlock();
+    return err;
+}
+
+static void clear_range(const size_t start, const size_t count)
+{
+    bitmap_lock();
+    bitmap_clear_range(&bitmap, start, count);
+    bitmap_unlock();
+}
+
 void my_frame_init(void)
 {
     uintptr_t kernel_end = ADDR_IN_KSEG1((uint32_t)&_kernel_end);
@@ -111,7 +165,11 @@ void my_frame_init(void)
     size_t frames_for_bitmap = count_bitmap_storage(all_frames);
     usable_frames = all_frames - frames_for_bitmap;
 
+    /* Initialize bitmap with clean storage. */
+    clear_buffer(kernel_end, frames_for_bitmap * FRAME_SIZE);
     bitmap_init(&bitmap, usable_frames, (void *)kernel_end);
+
+    bitmap_lock_init();
 
     frames_begin_kseg = ADDR_IN_KSEG1((uintptr_t)&_kernel_end);
     frames_begin_kseg += frames_for_bitmap * FRAME_SIZE;
@@ -129,7 +187,7 @@ int my_frame_alloc(uintptr_t *phys, const size_t cnt, const vm_flags_t flags)
     if (flags & VF_VA_AUTO) {
         size_t index = 0;
         /* TODO: do not begin from 0 */
-        bool err = bitmap_allocate_range(&bitmap, cnt, 0, bitmap.elements, &index);
+        bool err = allocate_range(cnt, 0, bitmap.elements, &index);
         if (err != false) {
             /* Allocation successfull. */
             *phys = frame_to_addr(index);
@@ -145,7 +203,7 @@ int my_frame_alloc(uintptr_t *phys, const size_t cnt, const vm_flags_t flags)
             return EINVAL;
         }
 
-        bool err = bitmap_check_range(&bitmap, addr_to_frame(*phys), cnt);
+        bool err = check_range(addr_to_frame(*phys), cnt);
         if (err == true) {
             /* Given frame range is full. */
             return ENOMEM;
@@ -166,10 +224,10 @@ int my_frame_free(const uintptr_t phys, const size_t cnt)
 
     size_t frame_index = addr_to_frame(phys);
 
-    bool err = bitmap_check_range(&bitmap, frame_index, cnt);
+    bool err = check_range(frame_index, cnt);
     if (err == true) {
         /* The given memory range was allocated --> free it */
-        bitmap_clear_range(&bitmap, frame_index, cnt);
+        clear_range(frame_index, cnt);
         return EOK;
     }
     else {
