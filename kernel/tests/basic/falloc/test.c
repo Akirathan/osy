@@ -28,8 +28,11 @@ static void my_test_allocation(void)
     assert(err == EOK);
 
     /* Cleanup */
-    err = my_frame_free(first_addr, 4);
+    err = my_frame_free(first_addr, 2);
     assert(err == EOK);
+    err = my_frame_free(sec_addr, 2);
+    assert(err == EOK);
+    err = my_frame_free(big_addr, 2);
 }
 
 static void my_test_alloc_and_free(void)

@@ -2,14 +2,21 @@
 #include <adt/bitmap.h>
 
 static void clear_buffer(const uintptr_t addr, const size_t bytes_count);
+static bool is_device_addr(const uintptr_t addr);
 static bool mem_accessible(const uint32_t addr);
 static size_t scan_memory(void);
 static size_t count_bitmap_storage(const size_t frame_num);
 static uintptr_t frame_to_addr(const size_t frame_index);
 static size_t addr_to_frame(const uintptr_t addr);
 static bool is_addr_aligned(const uintptr_t addr);
+static void bitmap_lock_init(void);
 static void bitmap_lock(void);
 static void bitmap_unlock(void);
+static bool allocate_range(const size_t count, const size_t base, const size_t constraint,
+                           size_t *index);
+static bool check_range(const size_t start, const size_t count);
+static void set_range(const size_t start, const size_t count);
+static void clear_range(const size_t start, const size_t count);
 
 static bitmap_t bitmap;
 static struct mutex bitmap_mtx;
@@ -30,6 +37,13 @@ static void clear_buffer(const uintptr_t addr, const size_t bytes_count)
         *buffer = 0;
         buffer++;
     }
+}
+
+/** Checks if given address belongs to some device.
+ */
+static bool is_device_addr(const uintptr_t addr)
+{
+
 }
 
 /** Tests whether given address is usable
@@ -119,21 +133,23 @@ static inline bool is_addr_aligned(const uintptr_t addr)
     return ((base_addr % FRAME_SIZE) == 0);
 }
 
-static void bitmap_lock_init(void)
+static inline void bitmap_lock_init(void)
 {
     mutex_init(&bitmap_mtx);
 }
 
-static void bitmap_lock(void)
+static inline void bitmap_lock(void)
 {
     mutex_lock(&bitmap_mtx);
 }
 
-static void bitmap_unlock(void)
+static inline void bitmap_unlock(void)
 {
     mutex_unlock(&bitmap_mtx);
 }
 
+/** Wrapper for bitmap_allocate_range
+ */
 static bool allocate_range(const size_t count, const size_t base, const size_t constraint,
                            size_t *index)
 {
@@ -143,6 +159,8 @@ static bool allocate_range(const size_t count, const size_t base, const size_t c
     return err;
 }
 
+/** Wrapper for bitmap_check_range
+ */
 static bool check_range(const size_t start, const size_t count)
 {
     bitmap_lock();
@@ -151,6 +169,15 @@ static bool check_range(const size_t start, const size_t count)
     return err;
 }
 
+static void set_range(const size_t start, const size_t count)
+{
+    bitmap_lock();
+    bitmap_set_range(&bitmap, start, count);
+    bitmap_unlock();
+}
+
+/** Wrapper for bitmap_clear_range
+ */
 static void clear_range(const size_t start, const size_t count)
 {
     bitmap_lock();
@@ -198,17 +225,21 @@ int my_frame_alloc(uintptr_t *phys, const size_t cnt, const vm_flags_t flags)
             return ENOMEM;
         }
     }
+    /* Do not move with phys, but allocate anyway. */
     else if (flags & VF_VA_USER) {
         if (!is_addr_aligned(*phys)) {
             return EINVAL;
         }
 
-        bool err = check_range(addr_to_frame(*phys), cnt);
+        size_t frame_index = addr_to_frame(*phys);
+        bool err = check_range(frame_index, cnt);
         if (err == true) {
             /* Given frame range is full. */
             return ENOMEM;
         }
         else {
+            /* Allocate the frame range. */
+            set_range(frame_index, cnt);
             return EOK;
         }
     }
